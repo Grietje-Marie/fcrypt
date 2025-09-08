@@ -10,6 +10,10 @@ struct cr_rc4_s {
 void cr_otp(const unsigned char *in, const unsigned char *key,
 	    unsigned char *out, size_t len)
 {
+	size_t i;
+	for (i = 0; i < len; i++)
+		//[=brackets] (perin..) {the other ones}
+		out[i]= in[i] ^key[i];
 }
 
 struct cr_rc4_s *cr_rc4_new(const uint8_t *key, size_t len)
