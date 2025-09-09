@@ -4,9 +4,9 @@
 #include <string.h>
 
 const size_t des_blksz = 8;
-const size_t tdea_blksz = 42;
+const size_t tdea_blksz = 8;
 const size_t des_keysz = 8;
-const size_t tdea_keysz = 42;
+const size_t tdea_keysz = 24;
 
 #define GET_BIT(array, bit)                     \
     (array[bit/8] & (0x80 >> (bit%8)))
@@ -232,8 +232,19 @@ void cr_des_decrypt(const uint8_t *ctext, const uint8_t *key, uint8_t *out)
 
 void cr_tdea_encrypt(const uint8_t *plain, const uint8_t *key, uint8_t *out)
 {
+	uint8_t enc[tdea_blksz];
+	uint8_t dec[tdea_blksz];
+
+	cr_des_encrypt(plain, key, enc);
+	cr_des_decrypt(enc,key+8,dec);
+	cr_des_encrypt(dec,key+16,out);
 }
 
 void cr_tdea_decrypt(const uint8_t *ctext, const uint8_t *key, uint8_t *out)
 {
+	uint8_t enc[tdea_blksz];
+	uint8_t dec[tdea_blksz];
+	cr_des_decrypt(ctext,key+16,dec);
+	cr_des_encrypt(dec,key+8,enc);
+	cr_des_decrypt(enc,key,out);
 }
