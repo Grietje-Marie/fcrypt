@@ -113,8 +113,60 @@ static const int pc2_table[] = {
 	46, 42, 50, 36, 29, 32
 };
 
+static void permute(const uint8_t *in, uint8_t *out, const int *p, size_t len){
+	for (uint8_t i; i < len; i++){
+		int index = p[i] - 1;
+		GET_BIT(in, index); //gets the bit-value in position index from in 
+		if (GET_BIT(in, index)) //condition that checks if the value is 1 (T) or 0(F)
+		{
+			SET_BIT(out, i); //out = set bit; i = index of bits
+
+		}
+		else{
+			CLEAR_BIT(out, i);
+		};
+
+	};
+};
+
+static void left_rotate(uint8_t *key) //static means that it is not exported 
+{
+	int llsb, rlsb;
+
+	llsb = (key[0] & 0x80) >> 3;
+	rlsb = (key[3] & 0x08) >> 3;
+
+	key[0] = (key[0] << 1) | ((key[1] & 0x80) >> 7);
+	key[1] = (key[1] << 1) | ((key[2] & 0x80) >> 7);
+	key[2] = (key[2] << 1) | ((key[3] & 0x80) >> 7);
+
+	key[3] = (((key[3] << 1) | ((key[4] & 0x80) >> 7)) & ~0x10) | llsb;
+
+	key[4] = (key[4] << 1) | ((key[5] & 0x80) >> 7);
+	key[5] = (key[5] << 1) | ((key[6] & 0x80) >> 7);
+	key[6] = (key[6] << 1) | rlsb;
+}
+
+
+//function generating key schedule:
+static void key_scheduling (uint8_t *key, uint8_t genAry[16][6]){ //keyL <-- poinnter key; genAry(stores our 16 keys)
+	uint8_t storage[7]; 
+	permute(key, storage, pc1_table, 56);
+	for(int i = 0; i <16; i++){
+		left_rotate(key);
+		if (i !=0 && i != 1 && i != 8 && i != 15)
+		{left_rotate(key);}
+		permute(key, genAry, pc2_table, 48);
+		
+	}
+};
+
 void cr_des_encrypt(const uint8_t *plain, const uint8_t *key, uint8_t *out)
 {
+	uint8_t Arrayy[8];
+	uint8_t genAry[16][6];
+	permute(plain, Arrayy, ip_table, 64);
+	key_scheduling(key, genAry
 }
 
 void cr_des_decrypt(const uint8_t *ctext, const uint8_t *key, uint8_t *out)
