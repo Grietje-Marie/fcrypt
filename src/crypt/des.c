@@ -3,9 +3,9 @@
 #include <stdint.h>
 #include <string.h>
 
-const size_t des_blksz = 42;
+const size_t des_blksz = 8;
 const size_t tdea_blksz = 42;
-const size_t des_keysz = 42;
+const size_t des_keysz = 8;
 const size_t tdea_keysz = 42;
 
 #define GET_BIT(array, bit)                     \
@@ -113,12 +113,121 @@ static const int pc2_table[] = {
 	46, 42, 50, 36, 29, 32
 };
 
+static void permute(const uint8_t *in, uint8_t *out, const int *p, size_t len){
+	for (uint8_t i = 0; i < len; i++){
+		int index = p[i] - 1;
+		GET_BIT(in, index); //gets the bit-value in position index from in 
+		if (GET_BIT(in, index)) //condition that checks if the value is 1 (T) or 0(F)
+		{
+			SET_BIT(out, i); //out = set bit; i = index of bits
+
+		}
+		else{
+			CLEAR_BIT(out, i);
+		};
+
+	};
+};
+
+static void left_rotate(uint8_t *key) //static means that it is not exported 
+{
+	int llsb, rlsb;
+
+	llsb = (key[0] & 0x80) >> 3;
+	rlsb = (key[3] & 0x08) >> 3;
+
+	key[0] = (key[0] << 1) | ((key[1] & 0x80) >> 7);
+	key[1] = (key[1] << 1) | ((key[2] & 0x80) >> 7);
+	key[2] = (key[2] << 1) | ((key[3] & 0x80) >> 7);
+
+	key[3] = (((key[3] << 1) | ((key[4] & 0x80) >> 7)) & ~0x10) | llsb;
+
+	key[4] = (key[4] << 1) | ((key[5] & 0x80) >> 7);
+	key[5] = (key[5] << 1) | ((key[6] & 0x80) >> 7);
+	key[6] = (key[6] << 1) | rlsb;
+}
+
+
+//function generating key schedule:
+static void key_scheduling (const uint8_t *key, uint8_t genAry[16][6]){ //keyL <-- poinnter key; genAry(stores our 16 keys)
+	uint8_t storage[7]; 
+	permute(key, storage, pc1_table, 56);
+	for(int i = 0; i <16; i++){
+		left_rotate(storage);
+		if (i !=0 && i != 1 && i != 8 && i != 15)
+		{left_rotate(storage);}
+		permute(storage, genAry[i], pc2_table, 48);
+		
+	}
+};
+
+void cr_des_structure(const uint8_t *plain, const uint8_t genAry[16][6],  uint8_t *out)
+{
+	uint8_t Arrayy[8];
+	uint8_t sblock [4];
+	uint8_t pblock [4], rblock[8]; 
+
+	permute(plain, Arrayy, ip_table, 64);	
+	for(int n = 0; n < 16; n++){
+		uint8_t eblock [6];
+		permute (Arrayy + 4, eblock, expansion_table, 48 );
+		for(int i = 0; i < 6; i++){
+			eblock [i] ^= genAry [n][i];
+		}
+
+		sblock[0] = sbox[0][(eblock[0] & 0xfc) >> 2] << 4;
+		sblock[0] |=
+		    sbox[1][(eblock[0] & 0x03) << 4 | (eblock[1] & 0xf0) >> 4];
+
+		sblock[1] =
+		    sbox[2][(eblock[1] & 0x0f) << 2 | (eblock[2] & 0xc0) >> 6]
+		    << 4;
+		sblock[1] |= sbox[3][eblock[2] & 0x3f];
+
+		sblock[2] = sbox[4][(eblock[3] & 0xfc) >> 2] << 4;
+		sblock[2] |=
+		    sbox[5][(eblock[3] & 0x03) << 4 | (eblock[4] & 0xf0) >> 4];
+
+		sblock[3] =
+		    sbox[6][(eblock[4] & 0x0f) << 2 | (eblock[5] & 0xc0) >> 6]
+		    << 4;
+		sblock[3] |= sbox[7][eblock[5] & 0x3f];
+
+		permute (sblock, pblock, p_table, 32);
+		
+		memcpy(rblock, Arrayy + 4, 4);
+		for(int i = 0; i < 4; i++)
+			rblock [4 + i] = Arrayy[i] ^pblock[i];
+		memcpy(Arrayy, rblock, 8);
+	}
+
+	memcpy(rblock, Arrayy + 4, 4);
+	memcpy(rblock + 4,  Arrayy, 4);
+
+	permute(rblock,out,fp_table,64);
+}
+
+
 void cr_des_encrypt(const uint8_t *plain, const uint8_t *key, uint8_t *out)
 {
+	uint8_t genAry[16][6];
+	key_scheduling(key, genAry);
+	cr_des_structure(plain, genAry, out);
 }
 
 void cr_des_decrypt(const uint8_t *ctext, const uint8_t *key, uint8_t *out)
 {
+	uint8_t genAry[16][6];
+	uint8_t swap[6];
+	key_scheduling(key, genAry);
+	
+	for (int i = 0; i < 8; i++) {
+		memcpy(swap, genAry[i], 6);
+		memcpy(genAry[i], genAry[15 - i], 6);
+		memcpy(genAry[15-i], swap, 6);
+	}
+
+	cr_des_structure(ctext, genAry, out);
 }
 
 void cr_tdea_encrypt(const uint8_t *plain, const uint8_t *key, uint8_t *out)
