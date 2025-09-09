@@ -31,10 +31,10 @@ struct cr_rc4_s *cr_rc4_new(const uint8_t *key, size_t len)
 	for(int i = 0; i < 256; i++){
 		p->S[i] = i;
 	}
-	uint8_t j = 0;
+	int j = 0;
 	for (int i = 0; i < 256; i++){
 		
-		j = (i + p->S[i] + key[i % len]) % 256;
+		j = (j+ p->S[i] + key[i % len]) % 256;
 		uint8_t swap = p->S[i];
 		p->S[i] = p->S[j];
 		p->S[j] = swap;
@@ -57,17 +57,27 @@ uint8_t cr_rc4_byte(struct cr_rc4_s*cipher)
 	uint8_t swap = cipher->S[cipher->i];
 	cipher->S[cipher->i] = cipher->S[cipher->j];
 	cipher->S[cipher->j] = swap;
+	uint8_t t = (cipher->S[cipher->i] + cipher->S[cipher->j]) % 256;
 
+	return cipher->S[t];
 }
 
 int cr_rc4_encrypt(struct cr_rc4_s *cipher, const uint8_t *plain, size_t len,
 		   uint8_t *out)
 {
+	for(size_t i = 0 ; i < len; i++){
+
+		out[i] = cr_rc4_byte(cipher) ^ plain[i];
+	} 
 	return 0;
 }
 
 int cr_rc4_decrypt(struct cr_rc4_s *cipher, const uint8_t *ctext, size_t len,
 		   uint8_t *out)
 {
+	for(size_t i = 0; i < len; i++){
+
+		out[i] = cr_rc4_byte(cipher) ^ ctext[i];
+	}	
 	return 0;
 }
