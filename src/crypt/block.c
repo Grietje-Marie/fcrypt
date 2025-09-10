@@ -77,11 +77,28 @@ static void cfb_decrypt(struct cr_bcphr_s *cipher, uint8_t * out)
 
 static void ofb_encrypt(struct cr_bcphr_s *cipher, uint8_t * out)
 {
+	cipher->encrypt(cipher->iv, cipher->key,out); 
+
+	for(size_t i = 0; i < cipher->blksz; i++){ 
+		cipher->iv[i] = out[i] ;
+	}
+	for(size_t i = 0; i < cipher->blksz; i++){
+		out[i] ^=cipher->block[i];
+	}
+
 }
 
 static void ofb_decrypt(struct cr_bcphr_s *cipher, uint8_t * out)
 {
-	cipher->decrypt(cipher->block, cipher->key, out);
+	cipher->encrypt(cipher->iv, cipher->key,out); 
+
+	for(size_t i = 0; i < cipher->blksz; i++){ 
+		cipher->iv[i] = out[i] ;
+	}
+	for(size_t i = 0; i < cipher->blksz; i++){
+		out[i] ^=cipher->block[i];
+	}
+
 }
 
 static void (*encypt_modes[])(struct cr_bcphr_s *, uint8_t *) = {
