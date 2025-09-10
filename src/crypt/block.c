@@ -59,10 +59,20 @@ static void cbc_decrypt(struct cr_bcphr_s *cipher, uint8_t * out)
 
 static void cfb_encrypt(struct cr_bcphr_s *cipher, uint8_t * out)
 {
+	cipher->encrypt (cipher->iv, cipher->key, out);
+	for(size_t i = 0; i<cipher->blksz; i++ )
+		out [i] ^= cipher->block [i];
+	for(size_t i = 0; i<cipher->blksz; i++ )
+		cipher->iv [i] = out [i];
 }
 
 static void cfb_decrypt(struct cr_bcphr_s *cipher, uint8_t * out)
 {
+	cipher->encrypt (cipher->iv, cipher->key, out);
+	for(size_t i = 0; i<cipher->blksz; i++ )
+		out [i] ^= cipher->block [i];
+	for(size_t i = 0; i<cipher->blksz; i++ )
+		cipher->iv [i] = cipher->block [i];
 }
 
 static void ofb_encrypt(struct cr_bcphr_s *cipher, uint8_t * out)
