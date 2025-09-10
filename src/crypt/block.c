@@ -32,10 +32,28 @@ static void ecb_decrypt(struct cr_bcphr_s *cipher, uint8_t * out)
 
 static void cbc_encrypt(struct cr_bcphr_s *cipher, uint8_t * out)
 {
+	for(size_t i = 0; i < cipher->blksz; i++){
+		cipher-> block[i] ^= cipher->iv[i];
+	}
+
+	cipher->encrypt(cipher->block, cipher->key, out);
+	
+	for(size_t i = 0; i < cipher ->blksz; i++){
+		cipher->iv[i] = out[i];
+	}
+	
 }
 
 static void cbc_decrypt(struct cr_bcphr_s *cipher, uint8_t * out)
 {
+	cipher -> decrypt(cipher->block, cipher->key, out);
+	for(size_t i=0; i< cipher-> blksz; i++){
+		out[i] ^= cipher-> iv[i];
+	}
+
+	for(size_t i = 0; i < cipher -> blksz; i++){
+		cipher->iv[i] = cipher->block[i];
+	}
 }
 
 
