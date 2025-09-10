@@ -81,15 +81,20 @@ size_t cr_bcphr_block_size(const struct cr_bcphr_s *cipher)
 
 void cr_bcphr_set_iv(struct cr_bcphr_s *cipher, const uint8_t *iv)
 {
-	return cipher->iv; //unsure
+	size_t size = cr_bcphr_block_size(cipher);
+	for(size_t i = 0; i < size; i++){
+		cipher -> iv[i] = iv[i];
+	}
+	
 }
 
 size_t cr_bcphr_get_iv(const struct cr_bcphr_s *cipher, uint8_t *iv)
 {
 	size_t size = cr_bcphr_block_size(cipher);
+	for(size_t i = 0; i < size; i++){
+		iv[i] = cipher->iv[i];
+	}
 	return size;
-	return 0; 
-	//for(int i = 0; i > size; i--);
 }
 
 enum cr_bcphr_mode cr_bcphr_get_mode(const struct cr_bcphr_s *cipher)
