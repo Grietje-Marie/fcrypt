@@ -30,12 +30,44 @@ static void ecb_decrypt(struct cr_bcphr_s *cipher, uint8_t * out)
 	cipher->decrypt(cipher->block, cipher->key, out);
 }
 
+static void cbc_encrypt(struct cr_bcphr_s *cipher, uint8_t * out)
+{
+}
+
+static void cbc_decrypt(struct cr_bcphr_s *cipher, uint8_t * out)
+{
+}
+
+
+static void cfb_encrypt(struct cr_bcphr_s *cipher, uint8_t * out)
+{
+}
+
+static void cfb_decrypt(struct cr_bcphr_s *cipher, uint8_t * out)
+{
+}
+
+static void ofb_encrypt(struct cr_bcphr_s *cipher, uint8_t * out)
+{
+}
+
+static void ofb_decrypt(struct cr_bcphr_s *cipher, uint8_t * out)
+{
+	cipher->decrypt(cipher->block, cipher->key, out);
+}
+
 static void (*encypt_modes[])(struct cr_bcphr_s *, uint8_t *) = {
 	ecb_encrypt,
+	cbc_encrypt,
+	cfb_encrypt,
+	ofb_encrypt,
 };
 
 static void (*decrypt_modes[])(struct cr_bcphr_s *, uint8_t *) = {
 	ecb_decrypt,
+	cbc_decrypt,
+	cfb_decrypt,
+	ofb_decrypt,
 };
 
 struct cr_bcphr_s *cr_bcphr_new(const uint8_t *key,
